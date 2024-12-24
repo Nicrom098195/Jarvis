@@ -11,7 +11,7 @@ hands = mpHands.Hands()
 pygame.init()
 display=1
 
-clickMax=35
+clickMax=29
 
 display_info = pygame.display.get_desktop_sizes()
 if len(display_info) < 2:
@@ -59,6 +59,7 @@ cv2.waitKey(1)
 sleep(2)
 cv2.destroyWindow("Rilevazione Puntini")
 
+points=[]
 
 while running:
     for event in pygame.event.get():
@@ -67,7 +68,7 @@ while running:
     success, img = cap.read()
     imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     results = hands.process(imgRGB)
-    screen.fill((0, 0, 0))
+    screen.fill((60, 60, 60))
 
     if results.multi_hand_landmarks:
         for handLms in results.multi_hand_landmarks:
@@ -77,6 +78,7 @@ while running:
             d=0       # Thumb-Index distance
             for id, lm in enumerate(handLms.landmark):
                 h, w, c = img.shape
+                cv2.circle(img, (int(lm.x*w), int(lm.y*h)), 2, (0, 0, 255), cv2.FILLED)
                 if id==4:
                     tp=(lm.x*w, lm.y*h)
                 if id==8:
@@ -84,15 +86,19 @@ while running:
                     
             cp=(max(0, min(int((ip[0]+tp[0])/2)-startCam[0], endCam[0]-startCam[0])), max(0, min(int((ip[1]+tp[1])/2)-startCam[1], endCam[1]-startCam[1])))
             d=sqrt((tp[0]-ip[0])**2 + (tp[1]-ip[1])**2)
-            print(cp, tp[1], ip[1], end="\t")
+            print(cp, d, end="\t")
             r=6
+            pos=(startPos[0]+(cp[0]/(endCam[0]-startCam[0]))*(endPos[0]-startPos[0]), startPos[1]+(cp[1]/(endCam[1]-startCam[1]))*(endPos[1]-startPos[1]))
             if d<clickMax:
                 r=12
+                points.append(pos)
             cv2.circle(img, (cp[0]+startCam[0], cp[1]+startCam[1]), r, (255, 255, 0), cv2.FILLED)
-            pos=(startPos[0]+(cp[0]/(endCam[0]-startCam[0]))*(endPos[0]-startPos[0]), startPos[1]+(cp[1]/(endCam[1]-startCam[1]))*(endPos[1]-startPos[1]))
-            print(cp, pos, end="\t")
             pygame.draw.circle(screen, (0, 255, 255), pos, r)
-    print(end="                          \r")
+    for point in points:
+        pygame.draw.circle(screen, (255, 255, 0), point, 2)
+
+
+    print(end="                                                                                            \r")
     pygame.display.flip()
     #cv2.imshow("Image", img)
     #cv2.waitKey(1)
